@@ -9,23 +9,27 @@
   when: ansible_os_family == 'RedHat'
   tags: sickbeard
 
+- name: ensure dependencies are instsalled for other systems
+  pip: name=Cheetah virtualenv={{ virtualenv }} virtualenv_command={{ virtualenv_command }}
+  tags: sickbeard
+  when: ansible_os_family != 'Debian' and ansible_os_family != 'Redhat'
+
 - name: ensure the install dir is available
   file: path={{ sickbeard_install_dir }}
         state=directory
-        owner={{ user }} group={{ user }} mode=755
+        owner={{ user }} group={{ group }} mode=755
   tags: sickbeard
 
 - name: ensure the git repository is checked-out
   git: repo={{ sickbeard_github_repo }}
        dest={{ sickbeard_install_dir }}
        accept_hostkey=yes
-  sudo_user: '{{ user }}'
   tags: sickbeard
 
 - name: ensure start-up config file is present
   template: src=sickbeard.j2
-            dest=/etc/default/sickbeard
-            owner={{ user }} mode=755
+            dest={{ sickbeard_config_file }}
+            owner={{ user }} mode=755 n
   tags: sickbeard
 
 - name: ensure start-up script is configured for Debian systems
@@ -45,3 +49,4 @@
 - name: ensure the sickbeard service is enabled at boot
   service: name=sickbeard enabled=true
   tags: sickbeard
+  when: ansible_os_family == 'Debian' or ansible_os_family == 'Redhat'
